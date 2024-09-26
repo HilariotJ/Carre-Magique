@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <title>ExamenL2</title>
+    <style>
+        input {
+            width: 50px;
+            margin: 2px;
+            text-align: center;
+        }
+        table {
+            margin-top: 10px;
+            border-collapse: collapse;
+        }
+        td {
+            border: 1px solid black;
+            padding: 5px;
+        }
+        .matrix {
+            margin: 10px;
+            display: inline-block; /* Align matrices horizontally */
+        }
+        .matrix-row {
+            display: flex; /* Use flexbox for row alignment */
+            justify-content: center; /* Center matrices in the row */
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="conteneur">
+        <header>
+            <h1>ESPA</h1>
+        </header>
+        <section>
+            <div class="groupe">
+                <h2>D&eacute;finition</h2>
+                <p>Un carr&eacute; magique additif est un type particulier de carr&eacute; o&ugrave; le total de chaque rangee, chaque colone est la m&ecirc;me valeur.</p>
+                <p>Ce nombre est appell&eacute; la constante magique.</p>
+            </div>
+            <div class="texte">
+                <h2>Nombres</h2>
+                <div id="number-inputs"></div>
+                <button onclick="saisie()">Créer le carré magique</button>
+                <h2>Les Carr&eacute;es Magiques :</h2>
+                <div id="matrix-display"></div>
+                <div id="result-display"></div>
+                <div id="matrix-display"></div>
+                <script type="text/javascript">
+                    let matrix; // Variable pour stocker la matrice
+
+                    function createInputRow() {
+                        const inputDiv = document.getElementById('number-inputs');
+                        inputDiv.innerHTML = ''; // Réinitialiser le contenu
+
+                        // Créer 9 champs de saisie
+                        for (let i = 0; i < 9; i++) {
+                            const input = document.createElement('input');
+                            input.type = 'number';
+                            input.id = `input-${i}`;
+                            input.placeholder = `N${i + 1}`;
+                            inputDiv.appendChild(input);
+                        }
+                    }
+                    // *********************
+                    
+                    function estSuiteArithmetique(arr) {
+                        if (arr.length < 2) return false;
+                        const differenceCommune = arr[1] - arr[0];
+                        for (let i = 1; i < arr.length; i++) {
+                            if (arr[i] - arr[i - 1] !== differenceCommune) {
+                                return false;
+                            }
+                        }
+                        return differenceCommune; // Retourne la raison
+                    }
+
+                    function verifierConditions(values) {
+                        // Supprimer les doublons et trier les valeurs
+                        const valeursUniq = Array.from(new Set(values)).sort((a, b) => a - b);
+
+                        // Condition 1: Vérifier si toutes les valeurs forment une suite arithmétique
+                        const differencePrincipale = estSuiteArithmetique(valeursUniq);
+                        if (differencePrincipale) {
+                            return { 
+                                valide: true, 
+                                message: "Les neuf nombres forment une suite arithmétique.", 
+                                differencePrincipale 
+                            };
+                        }
+
+                        // Condition 2: Vérifier les groupes de trois
+                        const groupes = [
+                            valeursUniq.slice(0, 3),
+                            valeursUniq.slice(3, 6),
+                            valeursUniq.slice(6, 9)
+                        ];
+
+                        const differencesGroupes = groupes.map(groupe => estSuiteArithmetique(groupe));
+                        const differencesInterGroupes = [
+                            groupes[1][0] - groupes[0][0],
+                            groupes[2][0] - groupes[1][0]
+                        ];
+
+                        // Vérifier si tous les groupes ont une différence commune
+                        if (differencesGroupes.every(d => d) && differencesInterGroupes.every(d => d === differencesInterGroupes[0])) {
+                            const differenceEntreGroupes = differencesInterGroupes[0];
+                            return { 
+                                valide: true, 
+                                message: "Les trois groupes forment chacun une suite arithmétique.", 
+                                differencePrincipale: groupes.map(g => estSuiteArithmetique(g)), 
+                                differenceInterGroupe: differenceEntreGroupes 
+                            };
+                        }
+
+                        return { valide: false, message: "Les conditions ne sont pas remplies." };
+                    }
+
+                    function saisie() {
+                        const values = [];
+
+                        // Récupérer les valeurs des champs de saisie
+                        for (let i = 0; i < 9; i++) {
+                            const value = parseInt(document.getElementById(`input-${i}`).value) || 0;
+                            values.push(value);
+                        }
+
+                        const verification = verifierConditions(values);
+                        alert(verification.message); // Alerte avec le message de vérification
+
+                        if (!verification.valide) {
+                            return; // Arrêter si les conditions ne sont pas remplies
+                        }
+
+                        // Conditions remplies, créer la matrice
+                        matrix = creerMatrice(values);
+                        affiche();
+
+                        // Afficher les différences
+                        let message = `Raison de la suite arithmétique : ${verification.differencePrincipale}\n`;
+                        if (Array.isArray(verification.differencePrincipale)) {
+                            message += `Raisons des groupes : ${verification.differencePrincipale.join(', ')}\n`;
+                            message += `Raison entre les blocs : ${verification.differenceInterGroupe}`;
+                        } else {
+                            message += `Raison : ${verification.differencePrincipale}`;
+                        }
+                        alert(message);
+
+                        affichage(verification, values);
+                    }
+
+
+
+
+
+                    /********   Affichage des raisons et la constante magique***********/
+                    
+                    function affichage(verification, values) {
+                        // Calculer la constante magique
+                        const constanteMagique = values.reduce((acc, val) => acc + val, 0) / 3;
+
+                        let message = `Constante magique : ${constanteMagique}<br>`;
+
+                        if (verification.differencePrincipale) {
+                            // Condition 1 : suite arithmétique
+                            message += `Raison de la suite arithmétique : ${verification.differencePrincipale}<br>`;
+                        } else {
+                            // Condition 2 : groupes de trois
+                            message += `Raisons des groupes : ${verification.differencesGroupes.join(', ')}<br>`;
+                            message += `Raison entre les blocs : ${verification.differenceInterGroupe}`;
+                        }
+
+                        // Afficher le message dans le div
+                        document.getElementById('result-display').innerHTML = message; 
+                    }
+
+                    /******************************************************************/
+
+
+
+                    function creerMatrice(values) {
+                        const matrix = [];
+                        for (let i = 0; i < 3; i++) {
+                            const row = values.slice(i * 3, i * 3 + 3);
+                            matrix.push(row);
+                        }
+                        // Algorithme de creation d'un carre magique
+                        let L1 = [0,0,0];
+                        let L2 = [0,0,0];
+                        let L3 = [0,0,0];
+                        let matrix2 = [];
+
+                        for (let i = 0; i < 3; i++) {
+                            for (let j = 0; j < 3; j++) {
+                                if ((i + j) % 3 === 1) {
+                                    if (i < j) {
+                                        L1[0] = matrix[i][j];
+                                    }
+                                    if (i === j) {
+                                        L1[1] = matrix[i][j];
+                                    }
+                                    if (i > j) {
+                                        L1[2] = matrix[i][j];
+                                    }
+                                }
+                                if ((i + j) % 3 === 2) {
+                                    if (i > j) {
+                                        L2[0] = matrix[i][j];
+                                    }
+                                    if (i === j) {
+                                        L2[1] = matrix[i][j];
+                                    }
+                                    if (i < j) {
+                                        L2[2] = matrix[i][j];
+                                    }
+                                }
+                                if ((i + j) % 3 === 0) {
+                                    if (i < j) {
+                                        L3[0] = matrix[i][j];
+                                    }
+                                    if (i === j) {
+                                        L3[1] = matrix[i][j];
+                                    }
+                                    if (i > j) {
+                                        L3[2] = matrix[i][j];
+                                    }
+                                }
+                            }
+                        }
+
+                        matrix2 = [L1,L2,L3];
+                        return matrix2;
+                    }
+
+                    function pivot(A) {
+                        const B = [];
+                        for (let i = 0; i < 3; i++) {
+                            B[i] = [A[2][i], A[1][i], A[0][i]]; // Colonne de la matrice originale
+                        }
+                        return B;
+                    }
+
+                    function miroir(A) {
+                        return [
+                            [A[2][0], A[2][1], A[2][2]], // Miroir de la 3ème ligne
+                            [A[1][0], A[1][1], A[1][2]], // Miroir de la 2ème ligne
+                            [A[0][0], A[0][1], A[0][2]]  // Miroir de la 1ère ligne
+                        ];
+                    }
+
+                    function afficherMatrice(matrix) {
+                        const matrixDiv = document.createElement('div');
+                        matrixDiv.className = 'matrix';
+
+                        const table = document.createElement('table');
+                        for (let i = 0; i < 3; i++) {
+                            const row = document.createElement('tr');
+                            for (let j = 0; j < 3; j++) {
+                                const cell = document.createElement('td');
+                                cell.innerText = matrix[i][j];
+                                row.appendChild(cell);
+                            }
+                            table.appendChild(row);
+                        }
+                        matrixDiv.appendChild(table);
+                        return matrixDiv;
+                    }
+
+                    function affiche() {
+                        const displayDiv = document.getElementById('matrix-display');
+                        displayDiv.innerHTML = ''; // Réinitialiser le contenu
+
+                        const topRow = document.createElement('div');
+                        topRow.className = 'matrix-row';
+
+                        // Afficher la matrice d'origine
+                        topRow.appendChild(afficherMatrice(matrix));
+
+                        // Afficher le miroir de la matrice d'origine
+                        //topRow.appendChild(afficherMatrice(miroir(matrix)));
+
+                        // Calculer et afficher les matrices pivots
+                        let currentMatrix = matrix; // Utilisation d'une variable pour suivre la matrice courante
+                        const pivotMatrices = [];
+                        for (let i = 0; i < 3; i++) {
+                            const pivotMatrix = pivot(currentMatrix);
+                            pivotMatrices.push(pivotMatrix);
+                            topRow.appendChild(afficherMatrice(pivotMatrix));
+                            currentMatrix = pivotMatrix; // Met à jour pour le prochain pivot
+                        }
+
+                        displayDiv.appendChild(topRow);
+
+                        // Afficher les miroirs des pivots dans la deuxième ligne
+                        const bottomRow = document.createElement('div');
+                        bottomRow.className = 'matrix-row';
+                        const miroirOrigine = miroir(matrix);
+                        bottomRow.appendChild(afficherMatrice(miroirOrigine));
+                        for (let i = 0; i < pivotMatrices.length; i++) {
+                            const miroirMatrix = miroir(pivotMatrices[i]);
+                            bottomRow.appendChild(afficherMatrice(miroirMatrix));
+                        }
+                        displayDiv.appendChild(bottomRow);
+                    }
+
+                    // Appeler createInputRow pour générer les champs de saisie lors du chargement de la page
+                    window.onload = createInputRow;
+
+                </script>
+
+                <button><a href="index.html">Retour</a></button>   
+            </div>
+            <div class="image"></div>
+        </section>
+        <footer>
+            <div class="espa">
+                <h1>ESPA</h1>
+                <p>Université d'Antanarivo</p>
+            </div>
+            <div class="address">
+                <h1>Adresse</h1>
+                <p>Cur vontovorona</p>
+            </div>
+            <div class="Tel">
+                <h1>Téléphone</h1>
+                <p>0341263589</p> 
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
